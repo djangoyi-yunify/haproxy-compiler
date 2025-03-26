@@ -41,7 +41,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: kylin-${{ matrix.platform }}
-        path: /tmp/erlang-${{ inputs.haproxyv }}-${{ matrix.platform }}.tgz
+        path: /tmp/haproxy-${{ inputs.haproxyv }}-${{ matrix.platform }}.tgz
 
   release:
     runs-on: ubuntu-latest
