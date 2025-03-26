@@ -32,7 +32,7 @@ jobs:
       working-directory: /tmp
     - name: compile harpoxy
       run: |
-        docker run --platform linux/${{ matrix.platform }} --rm -v /tmp/haproxy-${{ inputs.haproxyv }}:/workspace -w /workspace djangoyi/erlang-compiler:kylin-${{ inputs.osv }} bash -c "mkdir output && make -j $(nproc) TARGET=linux-glibc USE_OPENSSL=1 USE_QUIC=1 USE_QUIC_OPENSSL_COMPAT=1 USE_LUA=1 USE_PCRE2=1 && make DESTDIR=/workspace/output install"
+        docker run --platform linux/${{ matrix.platform }} --rm -v /tmp/haproxy-${{ inputs.haproxyv }}:/workspace -w /workspace djangoyi/haproxy-compiler:kylin-${{ inputs.osv }} bash -c "mkdir output && make -j $(nproc) TARGET=linux-glibc USE_OPENSSL=1 USE_QUIC=1 USE_QUIC_OPENSSL_COMPAT=1 USE_LUA=1 USE_PCRE2=1 && make DESTDIR=/workspace/output install"
     - name: pack bin files
       run: |
         cd /tmp/haproxy-${{ inputs.haproxyv }} && tar -czf /tmp/haproxy-${{ inputs.haproxyv }}-${{ matrix.platform }}.tgz output/*
