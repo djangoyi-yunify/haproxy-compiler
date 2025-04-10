@@ -3,7 +3,7 @@ FROM ubuntu:${OSV}
 
 CMD ["bash"]
 RUN apt update \
-    && apt install libssl-dev liblua5.4-dev gcc make -y \
+    && apt install libssl-dev liblua5.4-dev libpcre2-dev gcc make -y \
     && mkdir /workspace
 
 VOLUME [ "/workspace" ]
