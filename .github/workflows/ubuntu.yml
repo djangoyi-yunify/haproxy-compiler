@@ -1,0 +1,73 @@
+name: Compiler workflow for ubuntu
+on:
+  workflow_dispatch:
+    inputs:
+      haproxyv:
+        description: 'haproxy version'
+        default: '3.0.9'
+        required: false
+        type: string
+      osv:
+        description: 'ubuntu version'
+        default: '22.04'
+        required: false
+        type: string
+
+jobs:
+  compile:
+    strategy:
+      matrix:
+        platform: ["amd64", "arm64"]
+        # platform: ["amd64"]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Prepare haproxy src
+      run: |
+        tmp=$(echo "${{ inputs.haproxyv }}" | awk -F '.' '{print $1 "." $2}')
+        wget https://www.haproxy.org/download/$tmp/src/haproxy-${{ inputs.haproxyv }}.tar.gz
+        tar -xzf haproxy-${{ inputs.haproxyv }}.tar.gz
+        ls -lh haproxy-${{ inputs.haproxyv }}
+      working-directory: /tmp
+    - name: compile harpoxy
+      run: |
+        docker run --platform linux/${{ matrix.platform }} --rm -v /tmp/haproxy-${{ inputs.haproxyv }}:/workspace -w /workspace djangoyi/haproxy-compiler:ubuntu-${{ inputs.osv }} bash -c "mkdir output && make -j $(nproc) TARGET=linux-glibc USE_OPENSSL=1 USE_QUIC=1 USE_QUIC_OPENSSL_COMPAT=1 USE_LUA=1 USE_PCRE2=1 && make DESTDIR=/workspace/output install"
+    - name: pack bin files
+      run: |
+        cd /tmp/haproxy-${{ inputs.haproxyv }} && tar -czf /tmp/haproxy-${{ inputs.haproxyv }}-${{ matrix.platform }}.tgz output/*
+      working-directory: /tmp
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-${{ matrix.platform }}
+        path: /tmp/haproxy-${{ inputs.haproxyv }}-${{ matrix.platform }}.tgz
+
+  release:
+    runs-on: ubuntu-latest
+    needs: compile
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    # - name: Remove release
+    #   uses: liudonghua123/delete-release-action@v1
+    #   with:
+    #     release_name: redis-${{ inputs.redisv }}_ubuntu-${{ inputs.osv }}
+    #     suppress_errors: true
+    # - name: Remove tag
+    #   run: |
+    #     git tag -d mongo-${{ needs.export.outputs.mongo }}_ubuntu-${{ needs.export.outputs.ubuntu }} || :
+    #     git push origin --delete mongo-${{ needs.export.outputs.mongo }}_ubuntu-${{ needs.export.outputs.ubuntu }} || :
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ubuntu-*
+        path: release
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          release/ubuntu-*/*
+        tag_name: haproxy-${{ inputs.haproxyv }}_ubuntu-${{ inputs.osv }}
