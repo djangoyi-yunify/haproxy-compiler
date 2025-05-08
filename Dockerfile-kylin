@@ -3,7 +3,7 @@ ARG NAMESPACE
 FROM ${NAMESPACE}/kylin-server:${OSV}
 
 CMD ["bash"]
-RUN dnf install openssl-devel lua-devel gcc make -y \
+RUN dnf install openssl-devel lua-devel pcre2-devel gcc make -y \
     && mkdir /workspace
 
 VOLUME [ "/workspace" ]
